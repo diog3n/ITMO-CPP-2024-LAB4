@@ -9,6 +9,7 @@
 #include <stdexcept>
 #include <map>
 #include <iostream>
+#include <type_traits>
 
 constexpr char INDEX_OOB[] = "Index out of bounds.";
 constexpr char ITER_OOB [] = "Dereferencing an out of bounds iterator.";
@@ -94,23 +95,23 @@ public:
 			return index_ != other.index_;
 		}
 
-		T operator*() const {
+		value_type operator*() const {
 			if (index_ >= size_)
 				throw std::invalid_argument(ITER_OOB);
 
 			if (data_->find(index_) == data_->end()) {
-				return T();
+				return value_type();
 			} else {
 				return data_->at(index_);
 			}
 
-			return T();
+			return value_type();
 		}
 	};
 
 public:
 	SparseVector(): size_(0) {}
-	SparseVector(size_type size): size_(size) {}
+	explicit SparseVector(size_type size): size_(size) {}
 	SparseVector(size_type size, const value_type& value): size_(size) {
 		for (size_type i = 0; i < size_; i++) {
 			Set(i, value);
@@ -138,7 +139,7 @@ public:
 		}
 
 		if (data_.find(index) == data_.end())
-			return 0;
+			return value_type();
 
 		return data_.at(index);
 	}
@@ -224,6 +225,14 @@ SparseMatrixBase<T> MakeIdentityMatrix(std::size_t size);
 
 template<typename T>
 std::ostream& operator<<(std::ostream& out, SparseMatrixBase<T> matrix);
+
+bool IsInsignificant(double num, double precision) {
+    return num < precision;
+}
+
+bool IsEqual(double lhs, double rhs, double precision) {
+    return std::abs(lhs - rhs) <= precision;
+}
 
 template<typename T>
 class SparseMatrixBase {
@@ -326,6 +335,10 @@ public:
 	bool IsSquare() const {
 		return cols_ == rows_;
 	}
+
+    static bool CanMultiply(const SparseMatrixBase& lhs, const SparseMatrixBase& rhs) {
+        return lhs.Cols() == rhs.Rows();
+    }
 
 	SparseMatrixBase operator+(const SparseMatrixBase& other) const {
 		if ((cols_ != other.cols_) || (rows_ != other.rows_)) {
@@ -507,6 +520,8 @@ public:
 	using row_type = SparseVector<value_type>;
 	using container_type = SparseVector<row_type>;
 
+    static constexpr double EPSYLON = 10e-6;
+
 	SparseMatrix() = delete;
 
 	SparseMatrix(size_type rows, size_type cols)
@@ -522,6 +537,7 @@ public:
 		return Determinant() != 0;
 	}
 
+    // Yes, I'm overloading it
 	SparseMatrix SubMatrix(index_type exclusion_row, index_type exclusion_col) const {
 		SparseMatrixBase<value_type> base(*this);
 		return base.SubMatrix(exclusion_row, exclusion_col);
@@ -572,14 +588,31 @@ public:
 			}
 		}
 
+        // inv.RemoveInsignificants();
+
 		return inv;
 	}
 
 	SparseMatrix Power(int pow) const {
+        auto result = *this;
+        for (int i = 0; i < pow; i++) {
+            result = result * (*this);
+        }
 
+        return result;
 	}
 
 private:
+    void RemoveInsignificants() {
+        for (int i = 0; i < rows_; i++) {
+            for (int j = 0; j < cols_; j++) {
+                if (IsInsignificant(Get(i, j), EPSYLON)) {
+                    Set(i, j, 0);
+                }
+            }
+        }
+    }
+
 	void AddRowMultiple(index_type row_from, index_type row_to, double multiple) {
 		for (int i = 0; i < cols_; i++) {
 			Set(row_to, i, Get(row_to, i) + Get(row_from, i) * multiple);

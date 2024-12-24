@@ -385,6 +385,8 @@ int main(int argc, char **argv) {
 		std::cout << mat1 << std::endl;
 		std::cout << inv << std::endl;
 
+        auto res = mat1 * inv;
+
 		std::cout << mat1 * inv << std::endl;
 	}
 
