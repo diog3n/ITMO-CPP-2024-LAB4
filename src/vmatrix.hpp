@@ -31,19 +31,40 @@ public:
     }
 
     VectorMatrix(const VectorMatrix& other) = default;
-    VectorMatrix& operator=(const VectorMatrix& other) = default;
-    VectorMatrix& operator=(const std::initializer_list<std::initializer_list<value_type>> ilist) {
-        size_type rows = ilist.size();
-        size_type cols = ilist.begin()->size();
+    VectorMatrix(const std::initializer_list<std::initializer_list<value_type>>& values) {
+        rows_ = values.size();
+        cols_ = values.begin()->size();
 
-        int i = 0;
-        int j = 0;
-        for (const auto& row : ilist) {
-            for (const value_type& val : row) {
-
-            }
+        data_.resize(rows_);
+        for (row_type& row : data_) {
+            row.resize(cols_);
         }
 
+        index_type i = 0;
+        for (const auto& row : values ) {
+                index_type j = 0;
+                if (i >= rows_) {
+                        break;
+                }
+
+                for (const auto& el : row) {
+                        if (j >= cols_)
+                                break;
+
+                        Set(i, j, el);
+                        j++;
+                }
+                i++;
+        }
+    }
+
+    VectorMatrix& operator=(const VectorMatrix& other) = default;
+
+    VectorMatrix&
+    operator=(const std::initializer_list<std::initializer_list<value_type>>& values) {
+        VectorMatrix<value_type> other(values);
+
+        *this = values;
         return *this;
     }
 
@@ -62,8 +83,12 @@ public:
         return true;
     }
 
+    bool operator!=(const VectorMatrix& other) const {
+        return !(*this == other);
+    }
+
     static bool SameShape(const VectorMatrix& lhs, const VectorMatrix& rhs) {
-        if ((lhs.cols_ != rhs.cols_) || (lhs.rows_ != rhs.cols_))
+        if ((lhs.cols_ != rhs.cols_) || (lhs.rows_ != rhs.rows_))
             return false;
 
         return true;
@@ -96,7 +121,7 @@ public:
         for (size_t i = 0; i < rows_; ++i) {
             for (size_t j = 0; j < other.cols_; ++j) {
                 for (size_t k = 0; k < cols_; ++k) {
-                    result[i][j] += data_[i][k] * other.data_[k][j];
+                    result.data_[i][j] += data_[i][k] * other.data_[k][j];
                 }
             }
         }
@@ -110,6 +135,14 @@ public:
 
     void Set(index_type row, index_type col, const value_type& value) {
         data_[row][col] = value;
+    }
+
+    size_type Cols() const {
+        return cols_;
+    }
+
+    size_type Rows() const {
+        return rows_;
     }
 
 private:
@@ -135,12 +168,6 @@ std::ostream& operator<<(std::ostream& out, const VectorMatrix<T>& mat) {
 
         is_first = false;
     }
-}
 
-void test_speed() {
-    VectorMatrix mat1 = {
-        { 1, 2, 3 },
-        { 1, 2, 3 },
-        { 1, 2, 3 }
-    };
+    return out;
 }
