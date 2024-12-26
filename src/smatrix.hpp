@@ -134,7 +134,6 @@ public:
 
         // If default value - do nothing;
         if (value == value_type()) {
-            std::cout << "Zero value, skipped" << std::endl;
             if (Has(index)) {
                 data_.erase(data_.find(index));
             }
