@@ -719,7 +719,7 @@ public:
 
     SparseMatrix Power(int pow) const {
         auto result = *this;
-        for (int i = 0; i < pow; i++) {
+        for (int i = 1; i < pow; i++) {
             result = result * (*this);
         }
 

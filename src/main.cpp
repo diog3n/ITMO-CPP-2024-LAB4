@@ -251,6 +251,22 @@ void SmatrixTest() {
 
         END_TEST;
     }
+
+    TEST(smatrix power) {
+        SparseMatrix mat = {
+            {  1, 2 },
+            { -1, 1 }
+        };
+
+        SparseMatrix result = {
+            { -7, -8 },
+            {  4, -7 }
+        };
+
+        assert(mat.Power(4) == result);
+
+        END_TEST;
+    }
 }
 
 void VmatrixTest() {
